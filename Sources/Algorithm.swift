@@ -21,8 +21,8 @@ public extension StagedChangeset where Collection: RangeReplaceableCollection, C
     ///
     /// - Complexity: O(n)
     @inlinable
-    init(source: Collection, target: Collection) {
-        self.init(source: source, target: target, section: 0)
+    init(source: Collection, target: Collection, useSourceIndexForMoveDeletes: Bool = false) {
+        self.init(source: source, target: target, section: 0, useSourceIndexForMoveDeletes: useSourceIndexForMoveDeletes)
     }
 
     /// Creates a new `StagedChangeset` from the two collections.
