@@ -43,10 +43,11 @@ public extension StagedChangeset where Collection: RangeReplaceableCollection, C
     ///   - source: A source collection to calculate differences.
     ///   - target: A target collection to calculate differences.
     ///   - section: An Int value to use as section index (or offset) of element.
+    ///   - useSourceIndexForMoveDeletes: Whether to use original index for moveDeletes. Defaults to using index after deletion.
     ///
     /// - Complexity: O(n)
     @inlinable
-    init(source: Collection, target: Collection, section: Int) {
+    init(source: Collection, target: Collection, section: Int, useSourceIndexForMoveDeletes: Bool = false) {
         let sourceElements = ContiguousArray(source)
         let targetElements = ContiguousArray(target)
 
@@ -77,7 +78,8 @@ public extension StagedChangeset where Collection: RangeReplaceableCollection, C
             useTargetIndexForUpdated: false,
             mapIndex: { ElementPath(element: $0, section: section) },
             updatedElementsPointer: &firstStageElements,
-            notDeletedElementsPointer: &secondStageElements
+            notDeletedElementsPointer: &secondStageElements,
+            useSourceIndexForMoveDeletes: useSourceIndexForMoveDeletes
         )
 
         var changesets = ContiguousArray<Changeset<Collection>>()
@@ -148,10 +150,11 @@ public extension StagedChangeset where Collection: RangeReplaceableCollection, C
     /// - Parameters:
     ///   - source: A source sectioned collection to calculate differences.
     ///   - target: A target sectioned collection to calculate differences.
+    ///   - useSourceIndexForMoveDeletes: Whether to use original index for moveDeletes. Defaults to using index after deletion.
     ///
     /// - Complexity: O(n)
     @inlinable
-    init(source: Collection, target: Collection) {
+    init(source: Collection, target: Collection, useSourceIndexForMoveDeletes: Bool = false) {
         typealias Section = Collection.Element
         typealias SectionIdentifier = Collection.Element.DifferenceIdentifier
         typealias Element = Collection.Element.Collection.Element
@@ -191,7 +194,8 @@ public extension StagedChangeset where Collection: RangeReplaceableCollection, C
             source: sourceSections,
             target: targetSections,
             useTargetIndexForUpdated: true,
-            mapIndex: { $0 }
+            mapIndex: { $0 },
+            useSourceIndexForMoveDeletes: useSourceIndexForMoveDeletes
         )
 
         // Calculate element differences.
@@ -440,6 +444,11 @@ public extension StagedChangeset where Collection: RangeReplaceableCollection, C
 }
 
 /// The shared algorithm to calculate diffs between two linear collections.
+
+
+/// The shared algorithm to calculate diffs between two linear collections.
+/// - Parameters:
+///   - useSourceIndexForMoveDeletes: Whether to use original index for moveDeletes. Defaults to using index after deletion.
 @inlinable
 @discardableResult
 internal func diff<E: Differentiable, I>(
@@ -448,7 +457,8 @@ internal func diff<E: Differentiable, I>(
     useTargetIndexForUpdated: Bool,
     mapIndex: (Int) -> I,
     updatedElementsPointer: UnsafeMutablePointer<ContiguousArray<E>>? = nil,
-    notDeletedElementsPointer: UnsafeMutablePointer<ContiguousArray<E>>? = nil
+    notDeletedElementsPointer: UnsafeMutablePointer<ContiguousArray<E>>? = nil,
+    useSourceIndexForMoveDeletes: Bool = false
     ) -> DiffResult<I> {
     var deleted = [I]()
     var inserted = [I]()
@@ -552,7 +562,7 @@ internal func diff<E: Differentiable, I>(
 
             if sourceIndex != untrackedSourceIndex {
                 let deleteOffset = sourceTraces[sourceIndex].deleteOffset
-                moved.append((source: mapIndex(sourceIndex - deleteOffset), target: mapIndex(targetIndex)))
+                moved.append((source: mapIndex(sourceIndex - (useSourceIndexForMoveDeletes ? 0 : deleteOffset)), target: mapIndex(targetIndex)))
             }
         }
         else {

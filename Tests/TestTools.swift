@@ -26,14 +26,16 @@ func XCTAssertExactDifferences<C: RangeReplaceableCollection & Equatable>(
     source: C,
     target: C,
     section: Int,
+    useSourceIndexForMoveDeletes: Bool = false,
+    reproduce: Bool = true,
     expected: StagedChangeset<C>,
     file: StaticString = #file,
     line: UInt = #line
     ) where C.Element: Differentiable {
-    let stagedChangeset = StagedChangeset(source: source, target: target, section: section)
+    let stagedChangeset = StagedChangeset(source: source, target: target, section: section, useSourceIndexForMoveDeletes: useSourceIndexForMoveDeletes)
 
     XCTAssertEqual(stagedChangeset, expected, file: file, line: line)
-    XCTAssertReproducible(source: source, target: target, stagedChangeset: stagedChangeset, file: file, line: line)
+    if reproduce { XCTAssertReproducible(source: source, target: target, stagedChangeset: stagedChangeset, file: file, line: line) }
 }
 
 func XCTAssertExactDifferences<C: RangeReplaceableCollection & Equatable>(

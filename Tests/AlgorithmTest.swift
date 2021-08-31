@@ -222,6 +222,55 @@ extension AlgorithmTestCase {
             ]
         )
     }
+    
+    func testMixedChanges_sourceIndicesForMoveDeletes() {
+        let section = 1
+
+        let source = [
+            M(0, false),
+            M(1, false),
+            M(2, false)
+        ]
+        let target = [
+            M(2, false),
+            M(4, false),
+            M(0, true),
+            M(3, false)
+        ]
+
+        XCTAssertExactDifferences(
+            source: source,
+            target: target,
+            section: section,
+            useSourceIndexForMoveDeletes: true,
+            reproduce: false,
+            expected: [
+                Changeset(
+                    data: [
+                        M(0, true),
+                        M(1, false),
+                        M(2, false)
+                    ],
+                    elementUpdated: [ElementPath(element: 0, section: section)]
+                ),
+                Changeset(
+                    data: [
+                        M(0, true),
+                        M(2, false)
+                    ],
+                    elementDeleted: [ElementPath(element: 1, section: section)]
+                ),
+                Changeset(
+                    data: target,
+                    elementInserted: [
+                        ElementPath(element: 1, section: section),
+                        ElementPath(element: 3, section: section)
+                    ],
+                    elementMoved: [(source: ElementPath(element: 2, section: section), target: ElementPath(element: 0, section: section))]
+                )
+            ]
+        )
+    }
 
     func testDuplicated() {
         let section = 1
